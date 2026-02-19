@@ -1,0 +1,2644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加热系统功率智算师 v1.8</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header - 工业深蓝风格 */
+        .header {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(26, 54, 93, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #e53e3e, #dd6b20);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 8px rgba(229, 62, 62, 0.4);
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            color: #ffffff;
+        }
+        
+        .header p {
+            font-size: 13px;
+            color: #a0aec0;
+        }
+        
+        .btn-reset {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #ffffff;
+        }
+        
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        /* Progress */
+        .progress-container {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2c5282, #1a365d);
+            transition: width 0.3s ease;
+        }
+        
+        /* Steps */
+        .steps-container {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            min-width: 600px;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            border: 2px solid #cbd5e0;
+            background: #f7fafc;
+            color: #a0aec0;
+            transition: all 0.3s;
+        }
+        
+        .step.active .step-circle {
+            border-color: #2c5282;
+            background: #ebf4ff;
+            color: #2c5282;
+        }
+        
+        .step.completed .step-circle {
+            border-color: #38a169;
+            background: #c6f6d5;
+            color: #38a169;
+        }
+        
+        .step-label {
+            font-size: 12px;
+            margin-top: 8px;
+            color: #a0aec0;
+            text-align: center;
+        }
+        
+        .step.active .step-label,
+        .step.completed .step-label {
+            color: #2d3748;
+        }
+        
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background: #cbd5e0;
+            margin: 20px 5px 0;
+        }
+        
+        .step.completed + .step-line,
+        .step.completed .step-line {
+            background: #38a169;
+        }
+        
+        /* Main Card */
+        .main-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .card-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            color: #1a365d;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title .icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #e53e3e, #dd6b20);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .card-desc {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .card-content {
+            padding: 30px;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #2c5282;
+            box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.15);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #2c5282;
+            box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.15);
+        }
+        
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2c5282, #1a365d);
+            color: white;
+            box-shadow: 0 2px 8px rgba(44, 82, 130, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1a365d, #1a365d);
+            box-shadow: 0 4px 12px rgba(44, 82, 130, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f7fafc;
+            color: #2d3748;
+            border: 1px solid #cbd5e0;
+        }
+        
+        .btn-secondary:hover {
+            background: #edf2f7;
+        }
+        
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #38a169, #2f855a);
+            color: white;
+            box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #2f855a, #276749);
+        }
+        
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        /* Substance Grid */
+        .substance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        .substance-card {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        
+        .substance-card:hover {
+            border-color: #2c5282;
+            background: #f7fafc;
+        }
+        
+        .substance-card.selected {
+            border-color: #2c5282;
+            background: #ebf4ff;
+        }
+        
+        .substance-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 5px;
+            color: #1a365d;
+        }
+        
+        .substance-en {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+        
+        .substance-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .badge-liquid {
+            background: #bee3f8;
+            color: #2b6cb0;
+        }
+        
+        .badge-gas {
+            background: #c6f6d5;
+            color: #276749;
+        }
+        
+        .badge-oil {
+            background: #feebc8;
+            color: #c05621;
+        }
+        
+        .badge-other {
+            background: #e9d8fd;
+            color: #6b46c1;
+        }
+        
+        .substance-props {
+            font-size: 12px;
+            color: #4a5568;
+            margin-top: 8px;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #c6f6d5;
+            border: 1px solid #9ae6b4;
+            color: #276749;
+        }
+        
+        .alert-info {
+            background: #ebf4ff;
+            border: 1px solid #bee3f8;
+            color: #2b6cb0;
+        }
+        
+        .alert-warning {
+            background: #feebc8;
+            border: 1px solid #fbd38d;
+            color: #c05621;
+        }
+        
+        .alert-error {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            color: #c53030;
+        }
+        
+        /* Pressure Selection */
+        .pressure-selection {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .pressure-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1a365d;
+        }
+        
+        .pressure-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .pressure-btn {
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .pressure-btn:hover {
+            border-color: #2c5282;
+        }
+        
+        .pressure-btn.active {
+            border-color: #2c5282;
+            background: #ebf4ff;
+            color: #2c5282;
+        }
+        
+        .pressure-btn .pressure-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .pressure-btn .pressure-density {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 4px;
+        }
+        
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .data-table td {
+            color: #4a5568;
+        }
+        
+        /* Result */
+        .result-box {
+            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(26, 54, 93, 0.3);
+        }
+        
+        .result-power {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .result-unit {
+            font-size: 24px;
+            opacity: 0.9;
+        }
+        
+        .formula-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+        
+        /* Toggle Buttons */
+        .toggle-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .toggle-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #4a5568;
+        }
+        
+        .toggle-btn:hover {
+            border-color: #a0aec0;
+        }
+        
+        .toggle-btn.active {
+            border-color: #2c5282;
+            background: #ebf4ff;
+            color: #2c5282;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+            font-size: 13px;
+        }
+        
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+        
+        .modal-header h3 {
+            color: #1a365d;
+            font-size: 18px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #718096;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .modal-close:hover {
+            color: #2d3748;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        /* Add Steps */
+        .add-steps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .add-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .add-step-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .add-step.active .add-step-num {
+            background: #2c5282;
+            color: white;
+        }
+        
+        .add-step.completed .add-step-num {
+            background: #38a169;
+            color: white;
+        }
+        
+        .add-step-label {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .add-step.active .add-step-label,
+        .add-step.completed .add-step-label {
+            color: #2d3748;
+        }
+        
+        .add-step-line {
+            width: 60px;
+            height: 2px;
+            background: #e2e8f0;
+            margin: 0 10px;
+            margin-bottom: 25px;
+        }
+        
+        /* Category Options */
+        .category-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .category-btn {
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .category-btn:hover {
+            border-color: #2c5282;
+            background: #f7fafc;
+        }
+        
+        .category-btn.selected {
+            border-color: #2c5282;
+            background: #ebf4ff;
+        }
+        
+        .category-icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .category-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        /* Custom badge */
+        .badge-custom {
+            background: #fed7e2;
+            color: #c53030;
+        }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .substance-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pressure-options {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">🔥</div>
+                <div>
+                    <h1>加热系统功率智算师</h1>
+                    <p>电加热器功率计算专家 v1.8</p>
+                </div>
+            </div>
+            <button class="btn-reset" onclick="resetAll()">🔄 重新开始 Reset</button>
+        </div>
+        
+        <!-- Progress -->
+        <div class="progress-container">
+            <div class="progress-info">
+                <span>计算进度 Progress</span>
+                <span id="progressText">步骤 1 / 7</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- Steps -->
+        <div class="steps-container">
+            <div class="steps">
+                <div class="step active" id="step1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">选择物质<br>Select</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">输入数量<br>Quantity</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">温度参数<br>Temperature</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">加热时间<br>Time</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step5">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">冗余系数<br>Factor</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step6">
+                    <div class="step-circle">6</div>
+                    <div class="step-label">数据汇总<br>Summary</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step7">
+                    <div class="step-circle">7</div>
+                    <div class="step-label">计算结果<br>Result</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-card">
+            <!-- Step 1: 选择物质 -->
+            <div id="content1">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">🧪</span>
+                        Step 1: 选择物质 Select Substance
+                    </div>
+                    <div class="card-desc">确认被加热物质 Confirm the substance to be heated</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">请问被加热的物质是什么？</h3>
+                        <p style="color: #666;">选择或搜索物质名称，系统将自动获取其物性参数</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" class="form-input" id="searchInput" placeholder="搜索物质名称（如：水、空气、柴油...）" oninput="filterSubstances()">
+                    </div>
+                    
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" onclick="filterByCategory('all', this)">全部 All</button>
+                        <button class="toggle-btn" onclick="filterByCategory('liquid', this)">液体 Liquid</button>
+                        <button class="toggle-btn" onclick="filterByCategory('gas', this)">气体 Gas</button>
+                        <button class="toggle-btn" onclick="filterByCategory('oil', this)">油类 Oil</button>
+                        <button class="toggle-btn" onclick="filterByCategory('other', this)">其他 Other</button>
+                    </div>
+                    
+                    <div class="substance-grid" id="substanceGrid"></div>
+                    
+                    <!-- 手动添加物质按钮 -->
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn btn-secondary" onclick="showAddSubstanceModal()" style="padding: 15px 30px;">
+                            ➕ 手动添加物质 Add Custom Substance
+                        </button>
+                    </div>
+                    
+                    <!-- 导出/导入备份 -->
+                    <div style="margin-top: 15px; text-align: center; padding: 15px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 13px; color: #718096; margin-bottom: 10px;">
+                            💾 自定义物质备份 Custom Substance Backup
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="exportCustomSubstances()" style="padding: 10px 20px; font-size: 13px;">
+                                📤 导出备份 Export
+                            </button>
+                            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="padding: 10px 20px; font-size: 13px;">
+                                📥 导入备份 Import
+                            </button>
+                            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importCustomSubstances(event)">
+                        </div>
+                        <div id="customCount" style="font-size: 12px; color: #a0aec0; margin-top: 8px;"></div>
+                    </div>
+                    
+                    <!-- 气体压力选择 -->
+                    <div id="pressureSelection" class="pressure-selection hidden">
+                        <div class="pressure-title">🌡️ 选择气体工作压力 Select Gas Pressure（影响密度 Affects Density）</div>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+                            气体密度与压力成正比，请选择实际工作压力：<br>
+                            Gas density is proportional to pressure. Please select the actual working pressure:
+                        </p>
+                        <div class="pressure-options" id="pressureOptions"></div>
+                    </div>
+                    
+                    <div id="selectedSubstance" class="alert alert-success hidden" style="margin-top: 20px;">
+                        <strong>已选择 Selected：</strong><span id="selectedName"></span><br>
+                        <span id="selectedProps"></span>
+                    </div>
+                    
+                    <div id="error1" class="alert alert-error hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Step 2: 输入数量 -->
+            <div id="content2" class="hidden">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">⚖️</span>
+                        Step 2: 输入数量 Input Quantity
+                    </div>
+                    <div class="card-desc">质量/体积/流量 Mass/Volume/Flow</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">请问被加热物质的质量、流量或体积是多少？</h3>
+                        <p style="color: #666;">请输入数值并选择单位</p>
+                    </div>
+                    
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" id="btnMass" onclick="setInputType('mass')">质量/体积 Mass/Volume</button>
+                        <button class="toggle-btn" id="btnFlow" onclick="setInputType('flow')">流量 Flow</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label class="form-label" id="massLabel">质量/体积值</label>
+                            <input type="number" class="form-input" id="massValue" placeholder="例如: 1000">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">单位 Unit</label>
+                            <select class="form-select" id="massUnit"></select>
+                        </div>
+                    </div>
+                    
+                    <div id="densityInfo" class="alert alert-info"></div>
+                    <div id="error2" class="alert alert-error hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Step 3: 温度参数 -->
+            <div id="content3" class="hidden">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">🌡️</span>
+                        Step 3: 温度参数 Temperature
+                    </div>
+                    <div class="card-desc">初始温度和目标温度 Initial and Target Temperature</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">请问被加热物质的初始温度和目标温度分别是多少？</h3>
+                        <p style="color: #666;">单位：摄氏度（℃）</p>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">初始温度 Initial Temp (℃)</label>
+                            <input type="number" class="form-input" id="initialTemp" placeholder="例如: 20">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">目标温度 Target Temp (℃)</label>
+                            <input type="number" class="form-input" id="targetTemp" placeholder="例如: 60">
+                        </div>
+                    </div>
+                    
+                    <div id="tempRange" class="alert alert-info"></div>
+                    
+                    <div id="deltaT" class="alert alert-success hidden" style="text-align: center; font-weight: 500;"></div>
+                    
+                    <div id="error3" class="alert alert-error hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Step 4: 加热时间 -->
+            <div id="content4" class="hidden">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">⏱️</span>
+                        Step 4: 加热时间 Heating Time
+                    </div>
+                    <div class="card-desc">期望加热时间 Expected Heating Time</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">请问期望的加热时间是多少？</h3>
+                        <p style="color: #666;">选择时间单位并输入数值</p>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label class="form-label">加热时间 Time</label>
+                            <input type="number" class="form-input" id="heatingTime" placeholder="例如: 30">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">单位 Unit</label>
+                            <select class="form-select" id="timeUnit">
+                                <option value="min">分钟 (min)</option>
+                                <option value="h">小时 (h)</option>
+                                <option value="s">秒 (s)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="error4" class="alert alert-error hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Step 5: 冗余系数 -->
+            <div id="content5" class="hidden">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">⚙️</span>
+                        Step 5: 冗余系数 Redundancy Factor
+                    </div>
+                    <div class="card-desc">功率冗余设置 Power Redundancy Setting</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">请问功率冗余系数设置为多少？</h3>
+                        <p style="color: #666;">冗余系数用于补偿热损失和确保安全裕度</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">冗余系数 Factor (K)</label>
+                        <input type="number" class="form-input" id="redundancyFactor" value="1.2" step="0.05" min="1" max="3">
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="toggle-btn" onclick="setRedundancy(1.1)">1.1 (液体推荐 Liquid)</button>
+                        <button class="toggle-btn" onclick="setRedundancy(1.2)">1.2 (一般工况 General)</button>
+                        <button class="toggle-btn" onclick="setRedundancy(1.25)">1.25 (气体推荐 Gas)</button>
+                    </div>
+                    
+                    <div class="alert alert-info" style="margin-top: 20px;">
+                        <strong>冗余系数说明 Description：</strong><br>
+                        • 空气中加热 Air heating：建议 1.25（热损失较大 large heat loss）<br>
+                        • 液体中加热 Liquid heating：建议 1.1（热损失较小 small heat loss）<br>
+                        • 保温良好 Good insulation：可适当降低 can be lower<br>
+                        • 保温较差 Poor insulation：可适当提高 can be higher
+                    </div>
+                    
+                    <div id="error5" class="alert alert-error hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Step 6: 数据汇总 -->
+            <div id="content6" class="hidden">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">✅</span>
+                        Step 6: 数据汇总 Summary
+                    </div>
+                    <div class="card-desc">确认参数 Confirm Parameters</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">请确认以下参数</h3>
+                        <p style="color: #666;">所有数据已统一为国际单位制</p>
+                    </div>
+                    
+                    <!-- 项目信息 -->
+                    <div style="background: #f7fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <h4 style="font-size: 14px; color: #1a365d; margin-bottom: 15px;">📝 项目信息 Project Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">项目名称 Project Name</label>
+                                <input type="text" class="form-input" id="projectName" placeholder="例如：XX公司加热系统改造项目">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">计算人员 Calculated By</label>
+                                <input type="text" class="form-input" id="calculatedBy" placeholder="例如：张三">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <table class="data-table" id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th>参数名称 Parameter</th>
+                                <th>数值 Value</th>
+                                <th>单位 Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    
+                    <div id="propsSummary" class="alert alert-info" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+            
+            <!-- Step 7: 计算结果 -->
+            <div id="content7" class="hidden">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span class="icon">🧮</span>
+                        Step 7: 计算结果 Result
+                    </div>
+                    <div class="card-desc">功率输出 Power Output</div>
+                </div>
+                <div class="card-content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="font-size: 18px; margin-bottom: 8px;">计算完成 Calculation Complete</h3>
+                        <p style="color: #666;">根据以上参数计算，该电加热器所需功率为：</p>
+                    </div>
+                    
+                    <div class="result-box">
+                        <div class="result-power" id="resultPower">0.00</div>
+                        <div class="result-unit">KW</div>
+                    </div>
+                    
+                    <h4 style="margin-bottom: 10px;">📐 计算公式 Formula</h4>
+                    <div class="formula-box" id="formulaBox"></div>
+                    
+                    <h4 style="margin: 20px 0 10px;">📊 计算参数 Parameters</h4>
+                    <table class="data-table" id="resultTable">
+                        <thead>
+                            <tr>
+                                <th>参数 Parameter</th>
+                                <th>数值 Value</th>
+                                <th>单位 Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    
+                    <!-- 生成计算书按钮 -->
+                    <div style="margin-top: 30px; text-align: center; padding: 20px; background: #f7fafc; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 14px; color: #4a5568; margin-bottom: 15px;">
+                            📄 生成计算书 Generate Calculation Report
+                        </div>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="generateReport('zh')" style="padding: 12px 30px;">
+                                🇨🇳 中文版
+                            </button>
+                            <button class="btn btn-primary" onclick="generateReport('en')" style="padding: 12px 30px;">
+                                🇬🇧 English
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div style="padding: 0 30px 30px;">
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" id="prevBtn" onclick="prevStep()" disabled>← 上一步 Previous</button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">下一步 Next →</button>
+                    <button class="btn btn-success hidden" id="calcBtn" onclick="calculate()">🧮 开始计算 Calculate</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>加热系统功率智算师 v1.8 | 专业的电加热器功率计算工具</p>
+            <p style="margin-top: 5px;">计算公式: P(KW) = C × m × ΔT / (t × 3600 × 1000) × K</p>
+            <p style="margin-top: 8px; color: #999;">Author: OliverChow | Email: zhougw@gmail.com</p>
+        </div>
+    </div>
+
+    <!-- 添加物质模态框 -->
+    <div id="addSubstanceModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ 手动添加物质 Add Custom Substance</h3>
+                <button class="modal-close" onclick="closeAddSubstanceModal()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 步骤指示 -->
+                <div class="add-steps">
+                    <div class="add-step active" id="addStep1">
+                        <div class="add-step-num">1</div>
+                        <div class="add-step-label">选择分类<br>Category</div>
+                    </div>
+                    <div class="add-step-line"></div>
+                    <div class="add-step" id="addStep2">
+                        <div class="add-step-num">2</div>
+                        <div class="add-step-label">输入名称<br>Name</div>
+                    </div>
+                    <div class="add-step-line"></div>
+                    <div class="add-step" id="addStep3">
+                        <div class="add-step-num">3</div>
+                        <div class="add-step-label">输入物性<br>Properties</div>
+                    </div>
+                </div>
+
+                <!-- 步骤1: 选择分类 -->
+                <div id="addContent1">
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">请选择物质分类 Select Category</label>
+                        <div class="category-options">
+                            <button class="category-btn" onclick="selectAddCategory('liquid')">
+                                <span class="category-icon">💧</span>
+                                <span class="category-name">液体 Liquid</span>
+                            </button>
+                            <button class="category-btn" onclick="selectAddCategory('gas')">
+                                <span class="category-icon">💨</span>
+                                <span class="category-name">气体 Gas</span>
+                            </button>
+                            <button class="category-btn" onclick="selectAddCategory('oil')">
+                                <span class="category-icon">🛢️</span>
+                                <span class="category-name">油类 Oil</span>
+                            </button>
+                            <button class="category-btn" onclick="selectAddCategory('other')">
+                                <span class="category-icon">📦</span>
+                                <span class="category-name">其他 Other</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="addError1" class="alert alert-error hidden" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- 步骤2: 输入名称 -->
+                <div id="addContent2" class="hidden">
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">中文名称 Chinese Name</label>
+                        <input type="text" class="form-input" id="customNameCn" placeholder="例如：特种冷却液">
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label class="form-label">英文名称 English Name</label>
+                        <input type="text" class="form-input" id="customNameEn" placeholder="例如：Special Coolant">
+                    </div>
+                    <div id="addError2" class="alert alert-error hidden" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- 步骤3: 输入物性 -->
+                <div id="addContent3" class="hidden">
+                    <div class="form-row" style="margin-top: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">密度 Density (kg/m³)</label>
+                            <input type="number" class="form-input" id="customDensity" placeholder="例如：1000" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">比热容 Cp (J/(kg·K))</label>
+                            <input type="number" class="form-input" id="customSpecificHeat" placeholder="例如：4000" step="1">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label class="form-label">最低温度 Min Temp (℃)</label>
+                            <input type="number" class="form-input" id="customTempMin" placeholder="例如：0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">最高温度 Max Temp (℃)</label>
+                            <input type="number" class="form-input" id="customTempMax" placeholder="例如：100">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label class="form-label">描述 Description (可选 optional)</label>
+                        <input type="text" class="form-input" id="customDescription" placeholder="例如：自定义冷却液">
+                    </div>
+                    <div id="addError3" class="alert alert-error hidden" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="addPrevBtn" onclick="prevAddStep()" disabled>← 上一步</button>
+                <button class="btn btn-primary" id="addNextBtn" onclick="nextAddStep()">下一步 →</button>
+                <button class="btn btn-success hidden" id="addSaveBtn" onclick="saveCustomSubstance()">💾 保存 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 物性参数数据库
+        const substanceDatabase = [
+            // 液体类
+            { name: '水', nameEn: 'Water', category: 'liquid', density: 998.2, specificHeat: 4182, boilingPoint: 100, meltingPoint: 0, description: '最常见的加热介质', tempMin: 0, tempMax: 100 },
+            { name: '乙醇', nameEn: 'Ethanol', category: 'liquid', density: 789, specificHeat: 2440, boilingPoint: 78.4, meltingPoint: -114.1, description: '酒精，常用作溶剂和燃料', tempMin: -114, tempMax: 78 },
+            { name: '甲醇', nameEn: 'Methanol', category: 'liquid', density: 791.8, specificHeat: 2530, boilingPoint: 64.7, meltingPoint: -97.6, description: '木精，工业常用溶剂', tempMin: -97, tempMax: 64 },
+            { name: '丙酮', nameEn: 'Acetone', category: 'liquid', density: 784.5, specificHeat: 2170, boilingPoint: 56, meltingPoint: -94.9, description: '常用有机溶剂', tempMin: -94, tempMax: 56 },
+            { name: '甘油', nameEn: 'Glycerol', category: 'liquid', density: 1261, specificHeat: 2430, boilingPoint: 290, meltingPoint: 17.8, description: '丙三醇，高沸点液体', tempMin: 18, tempMax: 290 },
+            { name: '乙二醇', nameEn: 'Ethylene Glycol', category: 'liquid', density: 1113, specificHeat: 2380, boilingPoint: 197.3, meltingPoint: -12.9, description: '防冻液主要成分', tempMin: -12, tempMax: 197 },
+            { name: '苯', nameEn: 'Benzene', category: 'liquid', density: 876.5, specificHeat: 1740, boilingPoint: 80.1, meltingPoint: 5.5, description: '芳香烃，工业原料', tempMin: 5, tempMax: 80 },
+            { name: '甲苯', nameEn: 'Toluene', category: 'liquid', density: 866.9, specificHeat: 1670, boilingPoint: 110.6, meltingPoint: -95, description: '工业溶剂', tempMin: -95, tempMax: 110 },
+            { name: '二甲苯', nameEn: 'Xylene', category: 'liquid', density: 860, specificHeat: 1720, boilingPoint: 138.5, meltingPoint: -47.4, description: '油漆稀释剂', tempMin: -47, tempMax: 138 },
+            { name: '液氨', nameEn: 'Liquid Ammonia', category: 'liquid', density: 682, specificHeat: 4700, boilingPoint: -33.3, meltingPoint: -77.7, description: '制冷剂，工业原料', tempMin: -77, tempMax: -33 },
+            { name: '海水', nameEn: 'Seawater', category: 'liquid', density: 1025, specificHeat: 3900, boilingPoint: 100.7, meltingPoint: -1.9, description: '含盐量约3.5%的水', tempMin: -1.9, tempMax: 100 },
+            { name: '盐水(10%)', nameEn: 'Brine 10%', category: 'liquid', density: 1070, specificHeat: 3700, boilingPoint: 101.5, meltingPoint: -6.5, description: '10%氯化钠溶液', tempMin: -6, tempMax: 101 },
+            { name: '冷却液(50%水+50%乙二醇)', nameEn: 'Coolant 50/50', category: 'liquid', density: 1075, specificHeat: 3400, boilingPoint: 107, meltingPoint: -36, description: '防冻冷却液，冰点低、沸点高', tempMin: -36, tempMax: 107 },
+            
+            // 油类
+            { name: '变压器油', nameEn: 'Transformer Oil', category: 'oil', density: 880, specificHeat: 1900, boilingPoint: 300, meltingPoint: -45, description: '绝缘油，用于变压器冷却', tempMin: -45, tempMax: 300 },
+            { name: '液压油', nameEn: 'Hydraulic Oil', category: 'oil', density: 870, specificHeat: 1900, boilingPoint: 310, meltingPoint: -30, description: '液压系统工作介质', tempMin: -30, tempMax: 310 },
+            { name: '润滑油', nameEn: 'Lubricating Oil', category: 'oil', density: 880, specificHeat: 1850, boilingPoint: 350, meltingPoint: -20, description: '机械润滑用油', tempMin: -20, tempMax: 350 },
+            { name: '柴油', nameEn: 'Diesel', category: 'oil', density: 840, specificHeat: 2100, boilingPoint: 180, meltingPoint: -30, description: '柴油发动机燃料', tempMin: -30, tempMax: 180 },
+            { name: '汽油', nameEn: 'Gasoline', category: 'oil', density: 720, specificHeat: 2200, boilingPoint: 95, meltingPoint: -60, description: '汽油发动机燃料', tempMin: -60, tempMax: 95 },
+            { name: '煤油', nameEn: 'Kerosene', category: 'oil', density: 800, specificHeat: 2100, boilingPoint: 175, meltingPoint: -40, description: '航空煤油、照明用油', tempMin: -40, tempMax: 175 },
+            { name: '原油', nameEn: 'Crude Oil', category: 'oil', density: 850, specificHeat: 2000, boilingPoint: 300, meltingPoint: -20, description: '未加工石油', tempMin: -20, tempMax: 300 },
+            { name: '硅油', nameEn: 'Silicone Oil', category: 'oil', density: 960, specificHeat: 1500, boilingPoint: 250, meltingPoint: -50, description: '高温稳定介质', tempMin: -50, tempMax: 250 },
+            { name: '导热油', nameEn: 'Heat Transfer Oil', category: 'oil', density: 860, specificHeat: 2100, boilingPoint: 350, meltingPoint: -10, description: '高温传热介质', tempMin: -10, tempMax: 350 },
+            { name: '菜籽油', nameEn: 'Rapeseed Oil', category: 'oil', density: 920, specificHeat: 1800, boilingPoint: 230, meltingPoint: -10, description: '食用油', tempMin: -10, tempMax: 230 },
+            { name: '大豆油', nameEn: 'Soybean Oil', category: 'oil', density: 920, specificHeat: 1850, boilingPoint: 230, meltingPoint: -16, description: '食用油', tempMin: -16, tempMax: 230 },
+            { name: '重油', nameEn: 'Heavy Fuel Oil', category: 'oil', density: 960, specificHeat: 1800, boilingPoint: 450, meltingPoint: 10, description: '船舶燃料油，高粘度', tempMin: 10, tempMax: 450 },
+            
+            // 其他类
+            { name: '二元熔盐(60%NaNO₃+40%KNO₃)', nameEn: 'Binary Salt (Solar Salt)', category: 'other', density: 1850, specificHeat: 1500, boilingPoint: 600, meltingPoint: 220, description: '太阳能熔盐，高温传热介质', tempMin: 220, tempMax: 600 },
+            { name: '三元熔盐(Hitec)', nameEn: 'Ternary Salt (Hitec)', category: 'other', density: 1750, specificHeat: 1560, boilingPoint: 450, meltingPoint: 142, description: '低熔点熔盐，工作温度范围宽', tempMin: 142, tempMax: 450 },
+            
+            // 气体类 - 密度为1Bar、20℃下的值，比热容为定压比热容Cp
+            { name: '空气', nameEn: 'Air', category: 'gas', density: 1.205, specificHeat: 1005, boilingPoint: -194.4, meltingPoint: -216.2, description: '最常见的气体加热介质', tempMin: -100, tempMax: 1000, molarMass: 28.97 },
+            { name: '氮气', nameEn: 'Nitrogen', category: 'gas', density: 1.165, specificHeat: 1040, boilingPoint: -195.8, meltingPoint: -210, description: '惰性保护气体', tempMin: -100, tempMax: 1000, molarMass: 28.01 },
+            { name: '氧气', nameEn: 'Oxygen', category: 'gas', density: 1.331, specificHeat: 920, boilingPoint: -183, meltingPoint: -218.4, description: '助燃气体', tempMin: -100, tempMax: 500, molarMass: 32.00 },
+            { name: '氢气', nameEn: 'Hydrogen', category: 'gas', density: 0.0838, specificHeat: 14300, boilingPoint: -252.8, meltingPoint: -259.2, description: '高比热容气体', tempMin: -100, tempMax: 1000, molarMass: 2.016 },
+            { name: '氦气', nameEn: 'Helium', category: 'gas', density: 0.166, specificHeat: 5200, boilingPoint: -268.9, meltingPoint: -272.2, description: '惰性气体，高比热容', tempMin: -100, tempMax: 1000, molarMass: 4.003 },
+            { name: '二氧化碳', nameEn: 'Carbon Dioxide', category: 'gas', density: 1.842, specificHeat: 844, boilingPoint: -78.5, meltingPoint: -56.6, description: '温室气体，灭火剂', tempMin: -100, tempMax: 500, molarMass: 44.01 },
+            { name: '甲烷', nameEn: 'Methane', category: 'gas', density: 0.668, specificHeat: 2200, boilingPoint: -161.5, meltingPoint: -182.5, description: '天然气主要成分', tempMin: -100, tempMax: 500, molarMass: 16.04 },
+            { name: '丙烷', nameEn: 'Propane', category: 'gas', density: 1.864, specificHeat: 1640, boilingPoint: -42.1, meltingPoint: -187.7, description: '液化石油气成分', tempMin: -100, tempMax: 500, molarMass: 44.10 },
+            { name: '丁烷', nameEn: 'Butane', category: 'gas', density: 2.493, specificHeat: 1670, boilingPoint: -0.5, meltingPoint: -138.4, description: '液化石油气成分', tempMin: -100, tempMax: 500, molarMass: 58.12 },
+            { name: '氨气', nameEn: 'Ammonia', category: 'gas', density: 0.681, specificHeat: 2200, boilingPoint: -33.3, meltingPoint: -77.7, description: '制冷剂', tempMin: -50, tempMax: 500, molarMass: 17.03 },
+            { name: '水蒸气', nameEn: 'Steam', category: 'gas', density: 0.598, specificHeat: 2010, boilingPoint: 100, meltingPoint: 0, description: '水蒸气，加热介质', tempMin: 100, tempMax: 500, molarMass: 18.02 },
+            { name: '氩气', nameEn: 'Argon', category: 'gas', density: 1.622, specificHeat: 520, boilingPoint: -185.8, meltingPoint: -189.3, description: '惰性保护气体', tempMin: -100, tempMax: 1000, molarMass: 39.95 },
+            { name: '天然气', nameEn: 'Natural Gas', category: 'gas', density: 0.78, specificHeat: 2100, boilingPoint: -162, meltingPoint: -182, description: '混合气体，以甲烷为主', tempMin: -100, tempMax: 500, molarMass: 18.5 },
+            { name: '烟气', nameEn: 'Flue Gas', category: 'gas', density: 1.3, specificHeat: 1050, boilingPoint: -150, meltingPoint: -180, description: '燃烧产物，含CO2、N2等', tempMin: -50, tempMax: 1500, molarMass: 29.5 }
+        ];
+
+        // 压力等级配置
+        const pressureLevels = [
+            { bar: 1, label: '1 Bar (常压 Normal)' },
+            { bar: 5, label: '5 Bar' },
+            { bar: 10, label: '10 Bar' },
+            { bar: 20, label: '20 Bar' }
+        ];
+
+        // 单位配置
+        const massUnits = [
+            { value: 'kg', label: '千克 (kg)', factor: 1, needsDensity: false },
+            { value: 'g', label: '克 (g)', factor: 0.001, needsDensity: false },
+            { value: 't', label: '吨 (t)', factor: 1000, needsDensity: false },
+            { value: 'L', label: '升 (L)', factor: 0.001, needsDensity: true },
+            { value: 'mL', label: '毫升 (mL)', factor: 0.000001, needsDensity: true },
+            { value: 'm³', label: '立方米 (m³)', factor: 1, needsDensity: true }
+        ];
+
+        const flowUnits = [
+            { value: 'kg/h', label: '千克/小时 (kg/h)', factor: 1, needsDensity: false },
+            { value: 'kg/min', label: '千克/分钟 (kg/min)', factor: 60, needsDensity: false },
+            { value: 'kg/s', label: '千克/秒 (kg/s)', factor: 3600, needsDensity: false },
+            { value: 'L/h', label: '升/小时 (L/h)', factor: 0.001, needsDensity: true },
+            { value: 'L/min', label: '升/分钟 (L/min)', factor: 0.06, needsDensity: true },
+            { value: 'L/s', label: '升/秒 (L/s)', factor: 3.6, needsDensity: true },
+            { value: 'm³/h', label: '立方米/小时 (m³/h)', factor: 1, needsDensity: true }
+        ];
+
+        const timeFactors = { 's': 1/3600, 'min': 1/60, 'h': 1 };
+
+        // 状态
+        let currentStep = 1;
+        let selectedSubstance = null;
+        let selectedPressure = 1;
+        let inputType = 'mass';
+        let currentCategory = 'all';
+        
+        // 添加物质模态框状态
+        let addStep = 1;
+        let addCategory = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCustomSubstances();
+            renderSubstances();
+            updateUnitSelect();
+        });
+        
+        // 加载自定义物质
+        function loadCustomSubstances() {
+            const saved = localStorage.getItem('customSubstances');
+            if (saved) {
+                const customSubstances = JSON.parse(saved);
+                customSubstances.forEach(s => {
+                    if (!substanceDatabase.find(item => item.name === s.name)) {
+                        substanceDatabase.push(s);
+                    }
+                });
+            }
+            updateCustomCount();
+        }
+        
+        // 保存自定义物质到localStorage
+        function saveCustomSubstanceToStorage(substance) {
+            let customSubstances = JSON.parse(localStorage.getItem('customSubstances') || '[]');
+            customSubstances.push(substance);
+            localStorage.setItem('customSubstances', JSON.stringify(customSubstances));
+            updateCustomCount();
+        }
+        
+        // 更新自定义物质数量显示
+        function updateCustomCount() {
+            const customSubstances = JSON.parse(localStorage.getItem('customSubstances') || '[]');
+            const countDiv = document.getElementById('customCount');
+            if (customSubstances.length > 0) {
+                countDiv.textContent = `已保存 ${customSubstances.length} 个自定义物质 | ${customSubstances.length} custom substances saved`;
+            } else {
+                countDiv.textContent = '暂无自定义物质 | No custom substances';
+            }
+        }
+        
+        // 导出自定义物质
+        function exportCustomSubstances() {
+            const customSubstances = JSON.parse(localStorage.getItem('customSubstances') || '[]');
+            
+            if (customSubstances.length === 0) {
+                alert('⚠️ 暂无自定义物质可导出\nNo custom substances to export');
+                return;
+            }
+            
+            const exportData = {
+                version: '1.5',
+                exportDate: new Date().toISOString(),
+                description: '加热系统功率智算师 - 自定义物质备份文件',
+                descriptionEn: 'Heating Power Calculator - Custom Substances Backup',
+                author: 'OliverChow',
+                substances: customSubstances
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `custom_substances_backup_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`✅ 导出成功！\n已导出 ${customSubstances.length} 个自定义物质\nExported ${customSubstances.length} custom substances`);
+        }
+        
+        // 导入自定义物质
+        function importCustomSubstances(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    // 验证文件格式
+                    if (!importData.substances || !Array.isArray(importData.substances)) {
+                        throw new Error('Invalid file format');
+                    }
+                    
+                    let addedCount = 0;
+                    let duplicateCount = 0;
+                    
+                    importData.substances.forEach(s => {
+                        // 检查是否已存在
+                        if (!substanceDatabase.find(item => item.name === s.name)) {
+                            substanceDatabase.push(s);
+                            addedCount++;
+                        } else {
+                            duplicateCount++;
+                        }
+                    });
+                    
+                    // 合并到localStorage
+                    let existingCustom = JSON.parse(localStorage.getItem('customSubstances') || '[]');
+                    importData.substances.forEach(s => {
+                        if (!existingCustom.find(item => item.name === s.name)) {
+                            existingCustom.push(s);
+                        }
+                    });
+                    localStorage.setItem('customSubstances', JSON.stringify(existingCustom));
+                    
+                    renderSubstances();
+                    updateCustomCount();
+                    
+                    let message = `✅ 导入完成！\n`;
+                    message += `新增: ${addedCount} 个物质\n`;
+                    if (duplicateCount > 0) {
+                        message += `跳过重复: ${duplicateCount} 个物质`;
+                    }
+                    alert(message);
+                    
+                } catch (error) {
+                    alert('❌ 导入失败！文件格式无效\nImport failed! Invalid file format');
+                }
+            };
+            reader.readAsText(file);
+            
+            // 清空input，允许重复导入同一文件
+            event.target.value = '';
+        }
+
+        // 渲染物质列表
+        function renderSubstances() {
+            const grid = document.getElementById('substanceGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = substanceDatabase.filter(s => {
+                const matchSearch = s.name.toLowerCase().includes(search) || 
+                                   s.nameEn.toLowerCase().includes(search);
+                const matchCategory = currentCategory === 'all' || s.category === currentCategory;
+                return matchSearch && matchCategory;
+            });
+            
+            grid.innerHTML = filtered.map(s => {
+                const displayDensity = s.category === 'gas' ? 
+                    `${s.density} kg/m³ (1Bar)` : 
+                    `${s.density} kg/m³`;
+                
+                const categoryLabels = {
+                    'liquid': '液体',
+                    'gas': '气体',
+                    'oil': '油类',
+                    'other': '其他'
+                };
+                    
+                return `
+                <div class="substance-card ${selectedSubstance?.name === s.name ? 'selected' : ''}" 
+                     onclick="selectSubstance('${s.name}')">
+                    <div class="substance-name">${s.name}</div>
+                    <div class="substance-en">${s.nameEn}</div>
+                    <span class="substance-badge badge-${s.category}">
+                        ${categoryLabels[s.category]}
+                    </span>
+                    <div class="substance-props">
+                        密度 Density: ${displayDensity}<br>
+                        比热容 Cp: ${s.specificHeat} J/(kg·K)
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // 搜索过滤
+        function filterSubstances() {
+            renderSubstances();
+        }
+
+        // 分类过滤
+        function filterByCategory(category, btn) {
+            currentCategory = category;
+            document.querySelectorAll('.toggle-group .toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderSubstances();
+        }
+
+        // 选择物质
+        function selectSubstance(name) {
+            selectedSubstance = substanceDatabase.find(s => s.name === name);
+            renderSubstances();
+            
+            if (selectedSubstance.category === 'gas') {
+                showPressureSelection();
+            } else {
+                document.getElementById('pressureSelection').classList.add('hidden');
+                selectedPressure = 1;
+            }
+            
+            updateSelectedDisplay();
+            
+            const defaultK = selectedSubstance.category === 'gas' ? 1.25 : 1.1;
+            document.getElementById('redundancyFactor').value = defaultK;
+            
+            updateDensityInfo();
+            updateTempRange();
+            
+            hideError(1);
+        }
+
+        // 显示压力选择
+        function showPressureSelection() {
+            const container = document.getElementById('pressureSelection');
+            const optionsDiv = document.getElementById('pressureOptions');
+            
+            const baseDensity = selectedSubstance.density;
+            
+            optionsDiv.innerHTML = pressureLevels.map(p => {
+                const density = baseDensity * p.bar;
+                return `
+                    <button class="pressure-btn ${selectedPressure === p.bar ? 'active' : ''}" 
+                            onclick="selectPressure(${p.bar})">
+                        <div class="pressure-value">${p.label}</div>
+                        <div class="pressure-density">密度 Density: ${density.toFixed(3)} kg/m³</div>
+                    </button>
+                `;
+            }).join('');
+            
+            container.classList.remove('hidden');
+        }
+
+        // 选择压力
+        function selectPressure(bar) {
+            selectedPressure = bar;
+            showPressureSelection();
+            updateSelectedDisplay();
+            updateDensityInfo();
+        }
+
+        // 更新已选择显示
+        function updateSelectedDisplay() {
+            document.getElementById('selectedSubstance').classList.remove('hidden');
+            
+            let density = selectedSubstance.density;
+            let pressureInfo = '';
+            
+            if (selectedSubstance.category === 'gas') {
+                density = selectedSubstance.density * selectedPressure;
+                pressureInfo = ` (${selectedPressure}Bar)`;
+            }
+            
+            document.getElementById('selectedName').textContent = 
+                selectedSubstance.name + ' - ' + selectedSubstance.description;
+            document.getElementById('selectedProps').textContent = 
+                `密度 Density: ${density.toFixed(3)} kg/m³${pressureInfo} | 比热容 Cp: ${selectedSubstance.specificHeat} J/(kg·K)`;
+        }
+
+        // 设置输入类型
+        function setInputType(type) {
+            inputType = type;
+            document.getElementById('btnMass').classList.toggle('active', type === 'mass');
+            document.getElementById('btnFlow').classList.toggle('active', type === 'flow');
+            document.getElementById('massLabel').textContent = type === 'mass' ? '质量/体积值' : '流量值';
+            updateUnitSelect();
+        }
+
+        // 更新单位选择
+        function updateUnitSelect() {
+            const select = document.getElementById('massUnit');
+            const units = inputType === 'mass' ? massUnits : flowUnits;
+            select.innerHTML = units.map(u => `<option value="${u.value}">${u.label}</option>`).join('');
+        }
+
+        // 更新密度提示
+        function updateDensityInfo() {
+            if (selectedSubstance) {
+                let density = selectedSubstance.density;
+                let pressureInfo = '';
+                
+                if (selectedSubstance.category === 'gas') {
+                    density = selectedSubstance.density * selectedPressure;
+                    pressureInfo = ` (${selectedPressure}Bar压力下 at ${selectedPressure}Bar)`;
+                }
+                
+                document.getElementById('densityInfo').innerHTML = 
+                    `<strong>${selectedSubstance.name}</strong>${pressureInfo}的密度 Density: ${density.toFixed(3)} kg/m³，系统将自动进行单位换算。`;
+            }
+        }
+
+        // 更新温度范围提示
+        function updateTempRange() {
+            if (selectedSubstance) {
+                let info = `<strong>${selectedSubstance.name}</strong> 适用温度范围：最低 ${selectedSubstance.tempMin}℃ | 最高 ${selectedSubstance.tempMax}℃`;
+                if (selectedSubstance.category === 'liquid') {
+                    info += ` | 沸点 Boiling Point: ${selectedSubstance.boilingPoint}℃`;
+                }
+                if (selectedSubstance.category === 'other') {
+                    info += ` | 熔点 Melting Point: ${selectedSubstance.meltingPoint}℃`;
+                }
+                document.getElementById('tempRange').innerHTML = info;
+            }
+        }
+
+        // 设置冗余系数
+        function setRedundancy(value) {
+            document.getElementById('redundancyFactor').value = value;
+        }
+
+        // 验证步骤
+        function validateStep(step) {
+            hideError(step);
+            
+            switch(step) {
+                case 1:
+                    if (!selectedSubstance) {
+                        showError(1, '请选择被加热物质 Please select a substance');
+                        return false;
+                    }
+                    return true;
+                    
+                case 2:
+                    const massVal = parseFloat(document.getElementById('massValue').value);
+                    if (!massVal || massVal <= 0) {
+                        showError(2, '请输入有效的质量/体积/流量值 Please enter a valid value');
+                        return false;
+                    }
+                    return true;
+                    
+                case 3:
+                    const initialT = parseFloat(document.getElementById('initialTemp').value);
+                    const targetT = parseFloat(document.getElementById('targetTemp').value);
+                    
+                    if (isNaN(initialT) || isNaN(targetT)) {
+                        showError(3, '请输入有效的温度值 Please enter valid temperatures');
+                        return false;
+                    }
+                    if (targetT <= initialT) {
+                        showError(3, '目标温度必须高于初始温度 Target temp must be higher than initial');
+                        return false;
+                    }
+                    if (initialT < selectedSubstance.tempMin) {
+                        showError(3, `初始温度不能低于 ${selectedSubstance.tempMin}℃`);
+                        return false;
+                    }
+                    if (targetT > selectedSubstance.tempMax) {
+                        showError(3, `目标温度不能超过 ${selectedSubstance.tempMax}℃`);
+                        return false;
+                    }
+                    if (selectedSubstance.category === 'liquid' && targetT >= selectedSubstance.boilingPoint) {
+                        showError(3, `目标温度已达到或超过沸点 ${selectedSubstance.boilingPoint}℃`);
+                        return false;
+                    }
+                    return true;
+                    
+                case 4:
+                    const time = parseFloat(document.getElementById('heatingTime').value);
+                    if (!time || time <= 0) {
+                        showError(4, '请输入有效的加热时间 Please enter a valid heating time');
+                        return false;
+                    }
+                    return true;
+                    
+                case 5:
+                    const k = parseFloat(document.getElementById('redundancyFactor').value);
+                    if (isNaN(k) || k < 1 || k > 3) {
+                        showError(5, '冗余系数应在 1.0 到 3.0 之间 Factor should be between 1.0 and 3.0');
+                        return false;
+                    }
+                    return true;
+            }
+            return true;
+        }
+
+        // 显示/隐藏错误
+        function showError(step, message) {
+            document.getElementById('error' + step).textContent = message;
+            document.getElementById('error' + step).classList.remove('hidden');
+        }
+
+        function hideError(step) {
+            document.getElementById('error' + step).classList.add('hidden');
+        }
+
+        // 下一步
+        function nextStep() {
+            if (!validateStep(currentStep)) return;
+            
+            if (currentStep < 6) {
+                currentStep++;
+                updateUI();
+            }
+            
+            if (currentStep === 3) {
+                updateDeltaT();
+            }
+            
+            if (currentStep === 6) {
+                updateSummary();
+            }
+        }
+
+        // 上一步
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        // 更新UI
+        function updateUI() {
+            for (let i = 1; i <= 7; i++) {
+                document.getElementById('content' + i).classList.add('hidden');
+                document.getElementById('step' + i).classList.remove('active', 'completed');
+            }
+            
+            document.getElementById('content' + currentStep).classList.remove('hidden');
+            
+            for (let i = 1; i <= 7; i++) {
+                if (i < currentStep) {
+                    document.getElementById('step' + i).classList.add('completed');
+                } else if (i === currentStep) {
+                    document.getElementById('step' + i).classList.add('active');
+                }
+            }
+            
+            const progress = ((currentStep - 1) / 6) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `步骤 ${currentStep} / 7`;
+            
+            document.getElementById('prevBtn').disabled = currentStep === 1;
+            document.getElementById('nextBtn').classList.toggle('hidden', currentStep >= 6);
+            document.getElementById('calcBtn').classList.toggle('hidden', currentStep !== 6);
+        }
+
+        // 更新温差显示
+        function updateDeltaT() {
+            const initialT = parseFloat(document.getElementById('initialTemp').value);
+            const targetT = parseFloat(document.getElementById('targetTemp').value);
+            const deltaDiv = document.getElementById('deltaT');
+            
+            if (!isNaN(initialT) && !isNaN(targetT) && targetT > initialT) {
+                const delta = targetT - initialT;
+                deltaDiv.textContent = `温差 ΔT = ${delta.toFixed(1)} K`;
+                deltaDiv.classList.remove('hidden');
+            } else {
+                deltaDiv.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('initialTemp').addEventListener('input', updateDeltaT);
+        document.getElementById('targetTemp').addEventListener('input', updateDeltaT);
+
+        // 更新汇总表
+        function updateSummary() {
+            const massValue = document.getElementById('massValue').value;
+            const massUnit = document.getElementById('massUnit').value;
+            const initialT = document.getElementById('initialTemp').value;
+            const targetT = document.getElementById('targetTemp').value;
+            const heatingTime = document.getElementById('heatingTime').value;
+            const timeUnit = document.getElementById('timeUnit').value;
+            const k = document.getElementById('redundancyFactor').value;
+            
+            const deltaT = (parseFloat(targetT) - parseFloat(initialT)).toFixed(1);
+            
+            let pressureRow = '';
+            if (selectedSubstance.category === 'gas') {
+                pressureRow = `<tr><td>工作压力 Pressure</td><td>${selectedPressure}</td><td>Bar</td></tr>`;
+            }
+            
+            const tbody = document.querySelector('#summaryTable tbody');
+            tbody.innerHTML = `
+                <tr><td>被加热物质 Substance</td><td>${selectedSubstance.name}</td><td>-</td></tr>
+                ${pressureRow}
+                <tr><td>${inputType === 'mass' ? '质量 Mass' : '流量 Flow'}</td><td>${massValue}</td><td>${massUnit}</td></tr>
+                <tr><td>初始温度 Initial Temp</td><td>${initialT}</td><td>℃</td></tr>
+                <tr><td>目标温度 Target Temp</td><td>${targetT}</td><td>℃</td></tr>
+                <tr><td>温差 ΔT</td><td>${deltaT}</td><td>K</td></tr>
+                <tr><td>加热时间 Time</td><td>${heatingTime}</td><td>${timeUnit}</td></tr>
+                <tr><td>冗余系数 Factor K</td><td>${k}</td><td>-</td></tr>
+            `;
+            
+            let density = selectedSubstance.density;
+            let pressureInfo = '';
+            if (selectedSubstance.category === 'gas') {
+                density = selectedSubstance.density * selectedPressure;
+                pressureInfo = ` | 压力: ${selectedPressure}Bar`;
+            }
+            
+            document.getElementById('propsSummary').innerHTML = 
+                `<strong>物性参数 Properties:</strong>密度 Density: ${density.toFixed(3)} kg/m³${pressureInfo} | 比热容 Cp: ${selectedSubstance.specificHeat} J/(kg·K) | 沸点 Boiling Point: ${selectedSubstance.boilingPoint}℃`;
+        }
+
+        // 计算
+        function calculate() {
+            if (!validateStep(5)) return;
+            
+            const massValue = parseFloat(document.getElementById('massValue').value);
+            const massUnit = document.getElementById('massUnit').value;
+            const initialT = parseFloat(document.getElementById('initialTemp').value);
+            const targetT = parseFloat(document.getElementById('targetTemp').value);
+            const heatingTime = parseFloat(document.getElementById('heatingTime').value);
+            const timeUnit = document.getElementById('timeUnit').value;
+            const k = parseFloat(document.getElementById('redundancyFactor').value);
+            
+            let density = selectedSubstance.density;
+            if (selectedSubstance.category === 'gas') {
+                density = selectedSubstance.density * selectedPressure;
+            }
+            
+            const units = inputType === 'mass' ? massUnits : flowUnits;
+            const unitInfo = units.find(u => u.value === massUnit);
+            
+            let mass = massValue * unitInfo.factor;
+            if (unitInfo.needsDensity) {
+                mass *= density;
+            }
+            
+            const timeHours = heatingTime * timeFactors[timeUnit];
+            const deltaT = targetT - initialT;
+            
+            let power, formula;
+            if (inputType === 'flow') {
+                power = (selectedSubstance.specificHeat * mass * deltaT) / 3600 / 1000 * k;
+                formula = `P(KW) = C × ṁ × ΔT / 3600 / 1000 × K\n` +
+                         `P = ${selectedSubstance.specificHeat} × ${mass.toFixed(2)} × ${deltaT} / 3600 / 1000 × ${k}\n` +
+                         `P = ${power.toFixed(2)} KW`;
+            } else {
+                power = (selectedSubstance.specificHeat * mass * deltaT) / (timeHours * 3600 * 1000) * k;
+                formula = `P(KW) = C × m × ΔT / (t × 3600 × 1000) × K\n` +
+                         `P = ${selectedSubstance.specificHeat} × ${mass.toFixed(2)} × ${deltaT} / (${timeHours.toFixed(2)} × 3600 × 1000) × ${k}\n` +
+                         `P = ${power.toFixed(2)} KW`;
+            }
+            
+            document.getElementById('resultPower').textContent = power.toFixed(2);
+            document.getElementById('formulaBox').textContent = formula;
+            
+            let pressureRow = '';
+            if (selectedSubstance.category === 'gas') {
+                pressureRow = `<tr><td>工作压力 Pressure</td><td>${selectedPressure}</td><td>Bar</td></tr>`;
+            }
+            
+            const tbody = document.querySelector('#resultTable tbody');
+            tbody.innerHTML = `
+                <tr><td>物质 Substance</td><td>${selectedSubstance.name}</td><td>-</td></tr>
+                ${pressureRow}
+                <tr><td>比热容 Cp</td><td>${selectedSubstance.specificHeat}</td><td>J/(kg·K)</td></tr>
+                <tr><td>质量 Mass</td><td>${mass.toFixed(2)}</td><td>kg</td></tr>
+                <tr><td>温差 ΔT</td><td>${deltaT}</td><td>K</td></tr>
+                <tr><td>加热时间 Time</td><td>${timeHours.toFixed(2)}</td><td>h</td></tr>
+                <tr><td>冗余系数 Factor K</td><td>${k}</td><td>-</td></tr>
+            `;
+            
+            // 保存计算结果供生成计算书使用
+            calculationResult = {
+                projectName: document.getElementById('projectName').value || '',
+                calculatedBy: document.getElementById('calculatedBy').value || '',
+                substanceName: selectedSubstance.name,
+                substanceNameEn: selectedSubstance.nameEn,
+                pressure: selectedSubstance.category === 'gas' ? selectedPressure : null,
+                density: density,
+                specificHeat: selectedSubstance.specificHeat,
+                mass: mass.toFixed(2),
+                initialTemp: initialT,
+                targetTemp: targetT,
+                deltaT: deltaT,
+                heatingTime: timeHours.toFixed(2),
+                factor: k,
+                power: power.toFixed(2),
+                formula: formula,
+                isFlow: inputType === 'flow'
+            };
+            
+            currentStep = 7;
+            updateUI();
+        }
+
+        // 重置
+        function resetAll() {
+            currentStep = 1;
+            selectedSubstance = null;
+            selectedPressure = 1;
+            inputType = 'mass';
+            currentCategory = 'all';
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('massValue').value = '';
+            document.getElementById('initialTemp').value = '';
+            document.getElementById('targetTemp').value = '';
+            document.getElementById('heatingTime').value = '';
+            document.getElementById('redundancyFactor').value = '1.2';
+            document.getElementById('selectedSubstance').classList.add('hidden');
+            document.getElementById('pressureSelection').classList.add('hidden');
+            document.getElementById('deltaT').classList.add('hidden');
+            
+            document.querySelectorAll('.toggle-group .toggle-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === 0);
+            });
+            
+            setInputType('mass');
+            renderSubstances();
+            updateUI();
+            
+            for (let i = 1; i <= 5; i++) {
+                hideError(i);
+            }
+        }
+
+        // ==================== 添加物质模态框功能 ====================
+        
+        // 显示模态框
+        function showAddSubstanceModal() {
+            document.getElementById('addSubstanceModal').classList.remove('hidden');
+            resetAddModal();
+        }
+        
+        // 关闭模态框
+        function closeAddSubstanceModal() {
+            document.getElementById('addSubstanceModal').classList.add('hidden');
+        }
+        
+        // 重置模态框
+        function resetAddModal() {
+            addStep = 1;
+            addCategory = null;
+            
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById('addStep' + i).classList.remove('active', 'completed');
+                document.getElementById('addContent' + i).classList.add('hidden');
+            }
+            document.getElementById('addStep1').classList.add('active');
+            document.getElementById('addContent1').classList.remove('hidden');
+            
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('selected'));
+            
+            document.getElementById('customNameCn').value = '';
+            document.getElementById('customNameEn').value = '';
+            document.getElementById('customDensity').value = '';
+            document.getElementById('customSpecificHeat').value = '';
+            document.getElementById('customTempMin').value = '';
+            document.getElementById('customTempMax').value = '';
+            document.getElementById('customDescription').value = '';
+            
+            document.getElementById('addPrevBtn').disabled = true;
+            document.getElementById('addNextBtn').classList.remove('hidden');
+            document.getElementById('addSaveBtn').classList.add('hidden');
+            
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById('addError' + i).classList.add('hidden');
+            }
+        }
+        
+        // 选择分类
+        function selectAddCategory(category) {
+            addCategory = category;
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.closest('.category-btn').classList.add('selected');
+            document.getElementById('addError1').classList.add('hidden');
+        }
+        
+        // 下一步
+        function nextAddStep() {
+            if (!validateAddStep(addStep)) return;
+            
+            if (addStep < 3) {
+                document.getElementById('addStep' + addStep).classList.remove('active');
+                document.getElementById('addStep' + addStep).classList.add('completed');
+                document.getElementById('addContent' + addStep).classList.add('hidden');
+                
+                addStep++;
+                
+                document.getElementById('addStep' + addStep).classList.add('active');
+                document.getElementById('addContent' + addStep).classList.remove('hidden');
+                
+                document.getElementById('addPrevBtn').disabled = false;
+                
+                if (addStep === 3) {
+                    document.getElementById('addNextBtn').classList.add('hidden');
+                    document.getElementById('addSaveBtn').classList.remove('hidden');
+                }
+            }
+        }
+        
+        // 上一步
+        function prevAddStep() {
+            if (addStep > 1) {
+                document.getElementById('addStep' + addStep).classList.remove('active');
+                document.getElementById('addContent' + addStep).classList.add('hidden');
+                
+                addStep--;
+                
+                document.getElementById('addStep' + addStep).classList.remove('completed');
+                document.getElementById('addStep' + addStep).classList.add('active');
+                document.getElementById('addContent' + addStep).classList.remove('hidden');
+                
+                document.getElementById('addPrevBtn').disabled = addStep === 1;
+                document.getElementById('addNextBtn').classList.remove('hidden');
+                document.getElementById('addSaveBtn').classList.add('hidden');
+            }
+        }
+        
+        // 验证步骤
+        function validateAddStep(step) {
+            const addErrorDiv = document.getElementById('addError' + step);
+            addErrorDiv.classList.add('hidden');
+            
+            switch(step) {
+                case 1:
+                    if (!addCategory) {
+                        addErrorDiv.textContent = '请选择物质分类 Please select a category';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    return true;
+                    
+                case 2:
+                    const nameCn = document.getElementById('customNameCn').value.trim();
+                    const nameEn = document.getElementById('customNameEn').value.trim();
+                    
+                    if (!nameCn) {
+                        addErrorDiv.textContent = '请输入中文名称 Please enter Chinese name';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    if (!nameEn) {
+                        addErrorDiv.textContent = '请输入英文名称 Please enter English name';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    if (substanceDatabase.find(s => s.name === nameCn)) {
+                        addErrorDiv.textContent = '该中文名称已存在 This Chinese name already exists';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    return true;
+                    
+                case 3:
+                    const density = parseFloat(document.getElementById('customDensity').value);
+                    const specificHeat = parseFloat(document.getElementById('customSpecificHeat').value);
+                    const tempMin = parseFloat(document.getElementById('customTempMin').value);
+                    const tempMax = parseFloat(document.getElementById('customTempMax').value);
+                    
+                    if (!density || density <= 0) {
+                        addErrorDiv.textContent = '请输入有效的密度值 Please enter a valid density';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    if (!specificHeat || specificHeat <= 0) {
+                        addErrorDiv.textContent = '请输入有效的比热容值 Please enter a valid specific heat';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    if (isNaN(tempMin)) {
+                        addErrorDiv.textContent = '请输入最低温度 Please enter minimum temperature';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    if (isNaN(tempMax)) {
+                        addErrorDiv.textContent = '请输入最高温度 Please enter maximum temperature';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    if (tempMax <= tempMin) {
+                        addErrorDiv.textContent = '最高温度必须大于最低温度 Max temp must be higher than min temp';
+                        addErrorDiv.classList.remove('hidden');
+                        return false;
+                    }
+                    return true;
+            }
+            return true;
+        }
+        
+        // 保存自定义物质
+        function saveCustomSubstance() {
+            if (!validateAddStep(3)) return;
+            
+            const nameCn = document.getElementById('customNameCn').value.trim();
+            const nameEn = document.getElementById('customNameEn').value.trim();
+            const density = parseFloat(document.getElementById('customDensity').value);
+            const specificHeat = parseFloat(document.getElementById('customSpecificHeat').value);
+            const tempMin = parseFloat(document.getElementById('customTempMin').value);
+            const tempMax = parseFloat(document.getElementById('customTempMax').value);
+            const description = document.getElementById('customDescription').value.trim() || '自定义物质';
+            
+            const newSubstance = {
+                name: nameCn,
+                nameEn: nameEn,
+                category: addCategory,
+                density: density,
+                specificHeat: specificHeat,
+                boilingPoint: tempMax,
+                meltingPoint: tempMin,
+                description: description,
+                tempMin: tempMin,
+                tempMax: tempMax,
+                isCustom: true
+            };
+            
+            substanceDatabase.push(newSubstance);
+            saveCustomSubstanceToStorage(newSubstance);
+            closeAddSubstanceModal();
+            renderSubstances();
+            
+            alert(`✅ 物质 "${nameCn}" 已成功添加！\nSubstance "${nameEn}" has been added successfully!`);
+        }
+
+        // ==================== 生成计算书功能 ====================
+        
+        // 存储计算结果供生成计算书使用
+        let calculationResult = null;
+        
+        // 生成计算书
+        function generateReport(lang) {
+            if (!calculationResult) {
+                alert(lang === 'zh' ? '请先完成计算' : 'Please complete the calculation first');
+                return;
+            }
+            
+            const r = calculationResult;
+            const now = new Date();
+            const dateStr = now.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US');
+            const timeStr = now.toLocaleTimeString(lang === 'zh' ? 'zh-CN' : 'en-US');
+            
+            let html = '';
+            
+            if (lang === 'zh') {
+                html = generateChineseReport(r, dateStr, timeStr);
+            } else {
+                html = generateEnglishReport(r, dateStr, timeStr);
+            }
+            
+            // 打开新窗口
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+        
+        // 生成中文计算书
+        function generateChineseReport(r, dateStr, timeStr) {
+            const pressureRow = r.pressure ? `<tr><th>工作压力</th><td>${r.pressure} Bar</td></tr>` : '';
+            const projectName = r.projectName || '________________';
+            const calculatedBy = r.calculatedBy || '________________';
+            
+            return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>电加热器功率计算书</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: "Microsoft YaHei", SimSun, sans-serif; 
+            padding: 40px; 
+            max-width: 800px; 
+            margin: 0 auto;
+            color: #333;
+            line-height: 1.8;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 3px double #1a365d; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+        }
+        .header h1 { 
+            font-size: 28px; 
+            color: #1a365d; 
+            margin-bottom: 10px; 
+        }
+        .header .subtitle { 
+            font-size: 14px; 
+            color: #666; 
+        }
+        .section { 
+            margin-bottom: 25px; 
+        }
+        .section-title { 
+            font-size: 16px; 
+            font-weight: bold; 
+            background: #f0f4f8; 
+            padding: 8px 15px; 
+            border-left: 4px solid #1a365d; 
+            margin-bottom: 15px; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0; 
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 10px 12px; 
+            text-align: left; 
+        }
+        th { 
+            background: #f7fafc; 
+            font-weight: 600; 
+            width: 40%; 
+        }
+        .formula { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-family: "Courier New", monospace; 
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .result-box { 
+            background: linear-gradient(135deg, #1a365d, #2c5282); 
+            color: white; 
+            padding: 25px; 
+            border-radius: 8px; 
+            text-align: center; 
+            margin: 20px 0; 
+        }
+        .result-box .power { 
+            font-size: 42px; 
+            font-weight: bold; 
+        }
+        .result-box .unit { 
+            font-size: 20px; 
+        }
+        .footer { 
+            margin-top: 40px; 
+            padding-top: 20px; 
+            border-top: 1px solid #ddd; 
+            text-align: center; 
+            font-size: 12px; 
+            color: #888; 
+        }
+        .signature {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-item {
+            width: 45%;
+        }
+        .signature-line {
+            border-bottom: 1px solid #333;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            padding-bottom: 5px;
+        }
+        @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>电加热器功率计算书</h1>
+        <div class="subtitle">Heating System Power Calculation Report</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">一、基本信息</div>
+        <table>
+            <tr><th>项目名称</th><td>${projectName}</td></tr>
+            <tr><th>计算日期</th><td>${dateStr}</td></tr>
+            <tr><th>计算时间</th><td>${timeStr}</td></tr>
+            <tr><th>计算人员</th><td>${calculatedBy}</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">二、物质参数</div>
+        <table>
+            <tr><th>被加热物质</th><td>${r.substanceName}</td></tr>
+            ${pressureRow}
+            <tr><th>密度</th><td>${r.density} kg/m³</td></tr>
+            <tr><th>比热容</th><td>${r.specificHeat} J/(kg·K)</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">三、计算参数</div>
+        <table>
+            <tr><th>质量/流量</th><td>${r.mass} kg${r.isFlow ? '/h' : ''}</td></tr>
+            <tr><th>初始温度</th><td>${r.initialTemp} ℃</td></tr>
+            <tr><th>目标温度</th><td>${r.targetTemp} ℃</td></tr>
+            <tr><th>温差 ΔT</th><td>${r.deltaT} K</td></tr>
+            <tr><th>加热时间</th><td>${r.heatingTime} h</td></tr>
+            <tr><th>冗余系数 K</th><td>${r.factor}</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">四、计算公式</div>
+        <div class="formula">
+            ${r.isFlow ? 
+                'P(KW) = C × ṁ × ΔT / 3600 / 1000 × K<br>其中：C-比热容，ṁ-质量流量，ΔT-温差，K-冗余系数' :
+                'P(KW) = C × m × ΔT / (t × 3600 × 1000) × K<br>其中：C-比热容，m-质量，ΔT-温差，t-加热时间，K-冗余系数'
+            }
+        </div>
+        <div class="formula">
+            代入数值：<br>
+            ${r.formula}
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">五、计算结果</div>
+        <div class="result-box">
+            <div class="power">${r.power}</div>
+            <div class="unit">KW</div>
+        </div>
+        <p style="text-align: center; color: #666;">
+            建议选用功率 ≥ ${Math.ceil(r.power)} KW 的电加热器
+        </p>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">六、备注</div>
+        <p>1. 本计算结果基于用户提供参数，实际选型应考虑具体工况。</p>
+        <p>2. 冗余系数用于补偿热损失，建议根据实际保温情况调整。</p>
+        <p>3. 如有疑问，请联系计算人员确认。</p>
+    </div>
+    
+    <div class="signature">
+        <div class="signature-item">
+            <div class="signature-line">计算人签字</div>
+        </div>
+        <div class="signature-item">
+            <div class="signature-line">审核人签字</div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>加热系统功率智算师 v1.8 | Author: OliverChow | Email: zhougw@gmail.com</p>
+        <p>本计算书由系统自动生成，仅供参考</p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;" class="no-print">
+        <button onclick="window.print()" style="padding: 12px 40px; font-size: 16px; cursor: pointer; background: #1a365d; color: white; border: none; border-radius: 5px;">
+            🖨️ 打印 / 保存为PDF
+        </button>
+    </div>
+</body>
+</html>`;
+        }
+        
+        // 生成英文计算书
+        function generateEnglishReport(r, dateStr, timeStr) {
+            const pressureRow = r.pressure ? `<tr><th>Working Pressure</th><td>${r.pressure} Bar</td></tr>` : '';
+            const projectName = r.projectName || '________________';
+            const calculatedBy = r.calculatedBy || '________________';
+            
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Heating Power Calculation Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, Helvetica, sans-serif; 
+            padding: 40px; 
+            max-width: 800px; 
+            margin: 0 auto;
+            color: #333;
+            line-height: 1.8;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 3px double #1a365d; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+        }
+        .header h1 { 
+            font-size: 28px; 
+            color: #1a365d; 
+            margin-bottom: 10px; 
+        }
+        .header .subtitle { 
+            font-size: 14px; 
+            color: #666; 
+        }
+        .section { 
+            margin-bottom: 25px; 
+        }
+        .section-title { 
+            font-size: 16px; 
+            font-weight: bold; 
+            background: #f0f4f8; 
+            padding: 8px 15px; 
+            border-left: 4px solid #1a365d; 
+            margin-bottom: 15px; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 10px 0; 
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 10px 12px; 
+            text-align: left; 
+        }
+        th { 
+            background: #f7fafc; 
+            font-weight: 600; 
+            width: 40%; 
+        }
+        .formula { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-family: "Courier New", monospace; 
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
+        }
+        .result-box { 
+            background: linear-gradient(135deg, #1a365d, #2c5282); 
+            color: white; 
+            padding: 25px; 
+            border-radius: 8px; 
+            text-align: center; 
+            margin: 20px 0; 
+        }
+        .result-box .power { 
+            font-size: 42px; 
+            font-weight: bold; 
+        }
+        .result-box .unit { 
+            font-size: 20px; 
+        }
+        .footer { 
+            margin-top: 40px; 
+            padding-top: 20px; 
+            border-top: 1px solid #ddd; 
+            text-align: center; 
+            font-size: 12px; 
+            color: #888; 
+        }
+        .signature {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-item {
+            width: 45%;
+        }
+        .signature-line {
+            border-bottom: 1px solid #333;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            padding-bottom: 5px;
+        }
+        @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Heating Power Calculation Report</h1>
+        <div class="subtitle">Electric Heater Power Calculation</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">1. Basic Information</div>
+        <table>
+            <tr><th>Project Name</th><td>${projectName}</td></tr>
+            <tr><th>Date</th><td>${dateStr}</td></tr>
+            <tr><th>Time</th><td>${timeStr}</td></tr>
+            <tr><th>Calculated By</th><td>${calculatedBy}</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">2. Substance Properties</div>
+        <table>
+            <tr><th>Substance</th><td>${r.substanceNameEn}</td></tr>
+            ${pressureRow}
+            <tr><th>Density</th><td>${r.density} kg/m³</td></tr>
+            <tr><th>Specific Heat (Cp)</th><td>${r.specificHeat} J/(kg·K)</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">3. Calculation Parameters</div>
+        <table>
+            <tr><th>Mass / Flow Rate</th><td>${r.mass} kg${r.isFlow ? '/h' : ''}</td></tr>
+            <tr><th>Initial Temperature</th><td>${r.initialTemp} ℃</td></tr>
+            <tr><th>Target Temperature</th><td>${r.targetTemp} ℃</td></tr>
+            <tr><th>Temperature Difference (ΔT)</th><td>${r.deltaT} K</td></tr>
+            <tr><th>Heating Time</th><td>${r.heatingTime} h</td></tr>
+            <tr><th>Redundancy Factor (K)</th><td>${r.factor}</td></tr>
+        </table>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">4. Calculation Formula</div>
+        <div class="formula">
+            ${r.isFlow ? 
+                'P(KW) = C × ṁ × ΔT / 3600 / 1000 × K<br>Where: C = Specific Heat, ṁ = Mass Flow Rate, ΔT = Temperature Difference, K = Redundancy Factor' :
+                'P(KW) = C × m × ΔT / (t × 3600 × 1000) × K<br>Where: C = Specific Heat, m = Mass, ΔT = Temperature Difference, t = Heating Time, K = Redundancy Factor'
+            }
+        </div>
+        <div class="formula">
+            Calculation:<br>
+            ${r.formula}
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">5. Calculation Result</div>
+        <div class="result-box">
+            <div class="power">${r.power}</div>
+            <div class="unit">KW</div>
+        </div>
+        <p style="text-align: center; color: #666;">
+            Recommended heater power: ≥ ${Math.ceil(r.power)} KW
+        </p>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">6. Notes</div>
+        <p>1. This calculation is based on user-provided parameters. Actual selection should consider specific operating conditions.</p>
+        <p>2. The redundancy factor compensates for heat loss. Adjust according to actual insulation conditions.</p>
+        <p>3. Please contact the engineer for any questions.</p>
+    </div>
+    
+    <div class="signature">
+        <div class="signature-item">
+            <div class="signature-line">Calculated By</div>
+        </div>
+        <div class="signature-item">
+            <div class="signature-line">Checked By</div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Heating Power Calculator v1.8 | Author: OliverChow | Email: zhougw@gmail.com</p>
+        <p>This report is automatically generated for reference only</p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;" class="no-print">
+        <button onclick="window.print()" style="padding: 12px 40px; font-size: 16px; cursor: pointer; background: #1a365d; color: white; border: none; border-radius: 5px;">
+            🖨️ Print / Save as PDF
+        </button>
+    </div>
+</body>
+</html>`;
+        }
+    </script>
+</body>
+</html>
